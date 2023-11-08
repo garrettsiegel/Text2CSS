@@ -1,0 +1,13 @@
+{
+  "name": "Text2CSS",
+  "id": "1303474998141560446",
+  "api": "1.0.0",
+  "main": "code.js",
+  "capabilities": [],
+  "enableProposedApi": false,
+  "editorType": [
+    "figma"
+  ],
+  "ui": "ui.html"
+  
+}

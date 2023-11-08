@@ -1,0 +1,227 @@
+<style>
+
+  :root {
+    --color-primary: #168ADB;
+    --color-secondary: #42C4F8;
+    --color-tertiary: #C7DDEE;
+    --color-dark: #010820;
+    --color-background: #FBFDFD;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  main {
+    font-family: Helvetica, Arial, sans-serif;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: var(--color-background);
+    color: var(--color-dark);
+  }
+
+  p {
+    font-size: 0.9rem;
+  }
+
+  .logo {
+    width: 200px;
+  }
+
+  h2 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 1rem;
+  }
+
+  h3 {
+    text-transform: uppercase;
+    font-size: 0.8rem;
+  }
+
+  li {
+    margin-left: 0.75rem;
+  }
+
+  .video-link {
+    margin-top: 1rem;
+  }
+
+  .video-link p {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .video-link a {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: underline;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .video-link a:hover,
+  .video-link a:focus {
+    color: #1a9ff2;
+  }
+
+  .instructions {
+    margin-block: 1rem;
+    font-size: 0.75rem;
+    background-color: var(--color-tertiary);
+    padding: 1.25rem;
+    border-radius: 0.5rem;
+  }
+
+  .important {
+    color: var(--color-primary);
+    font-weight: 700;
+    margin-block: 0.25rem;
+    text-decoration: none;
+    list-style-type: none;  
+    margin-left: 0;  
+  }
+
+  pre {
+    background-color: var(--color-dark);
+    color: var(--color-tertiary);
+    border: 1px solid var(--color-tertiary);
+    padding: 1rem;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border-radius: 0.5rem;
+    margin-block: 1rem;
+  }
+
+  .buttons {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  button {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    background-color: var(--color-primary);
+    color: var(--color-background);
+    cursor: pointer;
+    width: 48%;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+  }
+
+  button:hover {
+    background-color: #1a9ff2;
+  }
+
+  button:disabled {
+    background-color: var(--color-tertiary);
+    color: #f3f3f3;
+    cursor: not-allowed;
+  }
+
+  select:focus {
+    outline: none;
+    border: 1px solid #303030;
+  }
+
+  select {
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    font-weight: 700;
+    color: #168ADB;
+  }
+
+  .select-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    margin-bottom: -0.5rem;
+    padding: 0;
+  }
+
+</style>
+
+
+<main>
+  <img class="logo" src="https://res.cloudinary.com/drxro4uha/image/upload/v1699387798/text2csslogo_text-logo_qcko46.png" alt="Text2CSS Logo" role="presentation">
+  <h2>Seamlessly turn Figma text styles into CSS, SCSS, or SASS with a single click. Text2CSS is your go-to tool for bridging design and development.</h2>
+
+  <div class="instructions">
+    <h3>Instructions:</h3>
+    <ul>
+      <li class="important">Ensure each text element in Figma has an assigned and named style for code generation.</li>
+      
+      <li>Select a frame with styled text.</li>
+      <li>Hit 'Extract Typography Styles' to spin up CSS magic.</li>
+      <li>Copy the generated code and bring your designs to life in the browser!</li>
+    </ul>
+
+    <div class="video-link">
+      <p>Need help with naming your text styles? Watch this handy tutorial:</p>
+      <a href="https://youtu.be/gtQ_A3imzsg?feature=shared" target="_blank" rel="noopener noreferrer">Creating and Applying Text Styles in Figma</a>
+    </div>
+    
+  </div>
+
+  <label for="style-format" class="select-label">Select style format:</label>
+  <select id="style-format" aria-label="Select style format">
+    <option value="css">CSS</option>
+    <option value="scss">SCSS</option>
+    <option value="sass">SASS</option>
+  </select>
+
+  <div id="styles-container" tabindex="0"></div>
+
+  <div class="buttons">
+    <button id="extract-styles-btn">Extract Typography Styles</button>
+    <button id="copy-styles-btn" disabled>Copy Styles to Clipboard</button>
+  </div>
+</main>
+
+
+<script>
+  function copyToClipboard(elementId) {
+    const text = document.getElementById(elementId).innerText
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(function() {
+        parent.postMessage({ pluginMessage: { type: 'copied' } }, '*')
+      }, function(err) {
+        console.error('Could not copy text: ', err)
+      })
+    } else {
+      let textarea = document.createElement("textarea")
+      textarea.value = text
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      parent.postMessage({ pluginMessage: { type: 'copied' } }, '*')
+      document.body.removeChild(textarea)
+    }
+  }
+
+  document.getElementById('extract-styles-btn').addEventListener('click', () => {
+    const styleFormat = document.getElementById('style-format').value
+    parent.postMessage({ pluginMessage: { type: 'extract-styles', format: styleFormat } }, '*')
+  })
+
+  window.onmessage = (event) => {
+    const { type, styles, message } = event.data.pluginMessage
+    if (type === 'styles') {
+      const container = document.getElementById('styles-container')
+      container.innerHTML = `<pre id="styles-text">${styles.join('\n\n')}</pre>`
+      document.getElementById('copy-styles-btn').disabled = false
+    } else if (type === 'error') {
+      console.error('Error:', message)
+    }
+  }
+
+  document.getElementById('copy-styles-btn').addEventListener('click', () => copyToClipboard('styles-text'))
+</script>
