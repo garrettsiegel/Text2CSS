@@ -1,24 +1,37 @@
 "use strict";
 const formatMixinName = (name) => name.replace(/\s+/g, '-').replace(/\//g, '-').toLowerCase();
 const createMixinContent = (textStyle, unitPrefs, addSemiColon = true) => {
-    // Convert px to the desired unit
-    const convertToUnit = (value, unit) => {
-        switch (unit) {
-            case 'em':
-            case 'rem':
-                return (value / unitPrefs.baseSize).toFixed(2) + unit; // Convert to em/rem and add unit
-            default:
-                return value.toString() + unit; // Append unit (px or any other unit)
+    // Convert px to the desired unit with appropriate formatting
+    const convertToUnit = (value, unit, isLineHeight = false) => {
+        if (value === 0)
+            return '0'; // Return '0' for zero values
+        if (unit === 'em' || unit === 'rem') {
+            let formattedValue = (value / unitPrefs.baseSize).toFixed(2);
+            if (isLineHeight) {
+                formattedValue = Number(formattedValue).toFixed(1); // Limit to one decimal place
+            }
+            return formattedValue + unit;
+        }
+        else {
+            if (isLineHeight) {
+                return value.toFixed(1) + unit; // Limit to one decimal place
+            }
+            return value.toString() + unit;
         }
     };
     let mixinContent = `font-family: '${textStyle.fontFamily}'${addSemiColon ? ';' : ''}\n  font-size: ${convertToUnit(textStyle.fontSize, unitPrefs.fontSizeUnit)};`;
-    // Add more properties to mixinContent as needed
-    mixinContent += `\n  font-weight: ${textStyle.fontWeight};`;
-    mixinContent += `\n  line-height: ${convertToUnit(textStyle.lineHeight, unitPrefs.lineHeightUnit)};`;
-    mixinContent += `\n  letter-spacing: ${convertToUnit(textStyle.letterSpacing, unitPrefs.letterSpacingUnit)};`;
+    // Add font-weight property with lowercase value
+    mixinContent += `\n  font-weight: ${textStyle.fontWeight.toLowerCase()};`;
+    // Add line-height property with one decimal place
+    mixinContent += `\n  line-height: ${convertToUnit(textStyle.lineHeight, unitPrefs.lineHeightUnit, true)};`;
+    // Add letter-spacing; if zero, decide between '0px' or '0'
+    const letterSpacingValue = textStyle.letterSpacing === 0 ? '0' : convertToUnit(textStyle.letterSpacing, unitPrefs.letterSpacingUnit);
+    mixinContent += `\n  letter-spacing: ${letterSpacingValue};`;
+    // Add text-decoration property with lowercase value
     if (textStyle.textDecoration !== null) {
-        mixinContent += `\n  text-decoration: ${textStyle.textDecoration};`;
+        mixinContent += `\n  text-decoration: ${textStyle.textDecoration.toLowerCase()};`;
     }
+    // Add text-transform property if present
     if (textStyle.textTransform !== null) {
         mixinContent += `\n  text-transform: ${textStyle.textTransform};`;
     }
@@ -32,7 +45,7 @@ const createStyleMixin = (textStyle, format, unitPrefs) => {
         case 'scss':
             return `@mixin ${mixinName} {\n  ${mixinContent}\n}`;
         case 'sass':
-            return `=${mixinName}\n  ${mixinContent}`;
+            return `.${mixinName}\n  ${mixinContent}`;
         case 'css':
             return `.${mixinName} {\n  ${mixinContent}\n}`;
         default:
@@ -85,7 +98,7 @@ const extractTextStyles = (format, unitPrefs) => {
     const formattedStyles = Array.from(textStylesMap.values()).map((style) => createStyleMixin(style, format, unitPrefs));
     figma.ui.postMessage({ type: 'styles', styles: formattedStyles });
 };
-figma.showUI(__html__, { width: 500, height: 600 });
+figma.showUI(__html__, { width: 500, height: 800 });
 figma.ui.onmessage = (msg) => {
     if (msg.type === 'extract-styles' && msg.format) {
         const { fontSizeUnit, lineHeightUnit, letterSpacingUnit, baseSize, } = msg.unitPreferences;

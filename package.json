@@ -1,17 +1,16 @@
 {
-  "name": "TextSASS",
+  "name": "text2css",
   "version": "1.0.0",
-  "description": "Your Figma Plugin",
+  "description": "Figma plugin to turn text styles into CSS, SCSS, or SASS",
   "main": "code.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "watch": "npm run build -- --watch"
+    "build": "",
+    "watch": ""
   },
-  "author": "",
+  "author": "Garrett Siegel",
   "license": "",
   "devDependencies": {
-    "@figma/plugin-typings": "^1.80.0",
-    "typescript": "*"
+    "@figma/plugin-typings": "^1.80.0"
   },
   "dependencies": {
     "figma-plugin-ds": "^1.0.1"

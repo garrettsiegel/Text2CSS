@@ -205,87 +205,43 @@
     <img src="https://res.cloudinary.com/drxro4uha/image/upload/v1705800558/text2csslogo-2024_dnhqyd.jpg" alt="Text2CSS Logo" role="presentation">
     <h1>Text2CSS</h1>
   </div>
-  
   <h2>Turn your Figma text styles into CSS, SCSS, or SASS with one click. Text2CSS is your go-to tool for bridging design and development.</h2>
-
   <div class="instructions">
     <h3>Instructions:</h3>
     <ul>
       <li class="important">Ensure each text element in Figma has an assigned and named style for code generation.</li>
-      
       <li>Select a frame with styled text.</li>
       <li>Hit 'Extract Typography Styles' to spin up CSS magic.</li>
       <li>Copy the generated code and bring your designs to life in the browser!</li>
     </ul>
-
     <div class="video-link">
       <p>Need help with naming your text styles? Watch this handy tutorial:</p>
       <a href="https://youtu.be/gtQ_A3imzsg?feature=shared" target="_blank" rel="noopener noreferrer">Creating and Applying Text Styles in Figma</a>
     </div>
-    
   </div>
-
   <div class="interface">
     <fieldset>
       <legend>Output Options</legend>
-
       <label for="style-format" class="select-label">Select style format:</label>
       <select id="style-format" aria-label="Select style format">
         <option value="css">CSS</option>
         <option value="scss">SCSS</option>
         <option value="sass">SASS</option>
       </select>
-  
-
-    <div class="output-options">
-      <p>font-size:</p>
-      <div>
-        <input type="radio" id="fontSizePX" name="fontSize" value="px" checked/>
-        <label for="fontSizePX">px</label>
-
-        <input type="radio" id="fontSizeEM" name="fontSize" value="em" />
-        <label for="fontSizeEM">em</label>
-
-        <input type="radio" id="fontSizeREM" name="fontSize" value="rem" />
-        <label for="fontSizeREM">rem</label>
+      <div class="output-options">
+        <p>font-size:</p>
+        <div>
+          <input type="radio" id="fontSizePX" name="fontSize" value="px" checked/>
+          <label for="fontSizePX">px</label>
+          <input type="radio" id="fontSizeEM" name="fontSize" value="em" />
+          <label for="fontSizeEM">em</label>
+          <input type="radio" id="fontSizeREM" name="fontSize" value="rem" />
+          <label for="fontSizeREM">rem</label>
+        </div>
       </div>
-    </div>
-<!-- 
-    <div class="output-options">
-      <p>line-height:</p>
-      <div>
-        <input type="radio" id="lineHeightPX" name="lineHeight" value="px" checked/>
-        <label for="lineHeightPX">px</label>
-  
-        <input type="radio" id="lineHeightPERCENT" name="lineHeight" value="%" />
-        <label for="lineHeightPERCENT">%</label>
-  
-        <input type="radio" id="lineHeightNONE" name="lineHeight" value="none" />
-        <label for="lineHeightNONE">none</label>
-      </div>
-      
-    </div>
-
-    <div class="output-options">
-      <p>letter-spacing:</p>
-
-      <input type="radio" id="letterSpacingPX" name="letterSpacing" value="px" checked/>
-      <label for="letterSpacingPX">px</label>
-
-      <input type="radio" id="letterSpacingPERCENT" name="letterSpacing" value="%" />
-      <label for="letterSpacingPERCENT">%</label>
-
-      <input type="radio" id="letterSpacingNONE" name="letterSpacing" value="none" />
-      <label for="letterSpacingNONE">none</label>
-
-    </div>   -->
-  </fieldset>
-
+    </fieldset>
   </div>
-  
-
   <div id="styles-container" tabindex="0"></div>
-
   <div class="buttons">
     <button id="extract-styles-btn">Extract Typography Styles</button>
     <button id="copy-styles-btn" disabled>Copy Styles to Clipboard</button>
@@ -316,8 +272,6 @@
   document.getElementById('extract-styles-btn').addEventListener('click', () => {
     const styleFormat = document.getElementById('style-format').value;
     const fontSizeUnit = document.querySelector('input[name="fontSize"]:checked').value;
-    // const lineHeightUnit = document.querySelector('input[name="lineHeight"]:checked').value;
-    // const letterSpacingUnit = document.querySelector('input[name="letterSpacing"]:checked').value;
 
     parent.postMessage({
       pluginMessage: {
@@ -325,8 +279,6 @@
         format: styleFormat,
         unitPreferences: {
           fontSizeUnit
-          // lineHeightUnit,
-          // letterSpacingUnit
         }
       }
     }, '*');
