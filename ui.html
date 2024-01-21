@@ -22,20 +22,33 @@
     gap: 10px;
     background-color: var(--color-background);
     color: var(--color-dark);
+    /* background-color: orange; */
   }
 
   p {
     font-size: 0.9rem;
   }
 
-  .logo {
+  .logo-container {
     width: 200px;
+    display: flex;
+    align-items: center;
+  }
+
+  .logo-container img {
+    max-width: 50px;
+    margin-right: 0.5rem;
+
+  }
+
+  .logo-container h1 {
+    color: var(--color-primary)
+
   }
 
   h2 {
     font-size: 0.9rem;
     font-weight: 600;
-    margin-top: 1rem;
   }
 
   h3 {
@@ -87,6 +100,18 @@
     margin-left: 0;  
   }
 
+  .interface {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .output-options {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
   pre {
     background-color: var(--color-dark);
     color: var(--color-tertiary);
@@ -133,26 +158,55 @@
 
   select {
     border-radius: 0.25rem;
-    padding: 0.5rem;
+    /* padding: 0.5rem; */
     font-weight: 700;
     color: #168ADB;
   }
 
-  .select-label {
+  .select-label, .output-options p {
     font-size: 0.8rem;
     font-weight: 700;
     text-transform: uppercase;
     color: var(--color-primary);
-    margin-bottom: -0.5rem;
-    padding: 0;
+    /* background-color: orange; */
+    /* margin-bottom: -0.5rem; */
+    /* padding: 0; */
   }
 
+  
+
+
+  fieldset {
+    padding: 1rem;
+    /* background-color: var(--color-background); */
+    border-radius: 0.5rem;
+    /* border: none; */
+  }
+
+  input[type="radio"] {
+    font-size: 0.8rem;
+    color: red
+  }
+
+  legend {
+    padding-inline: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--color-dark);
+    text-transform: uppercase;
+    /* background-color: orange; */
+    padding: 0.5rem;
+  }
 </style>
 
 
 <main>
-  <img class="logo" src="https://res.cloudinary.com/drxro4uha/image/upload/v1699387798/text2csslogo_text-logo_qcko46.png" alt="Text2CSS Logo" role="presentation">
-  <h2>Seamlessly turn Figma text styles into CSS, SCSS, or SASS with a single click. Text2CSS is your go-to tool for bridging design and development.</h2>
+  <div class="logo-container">
+    <img src="https://res.cloudinary.com/drxro4uha/image/upload/v1705800558/text2csslogo-2024_dnhqyd.jpg" alt="Text2CSS Logo" role="presentation">
+    <h1>Text2CSS</h1>
+  </div>
+  
+  <h2>Turn your Figma text styles into CSS, SCSS, or SASS with one click. Text2CSS is your go-to tool for bridging design and development.</h2>
 
   <div class="instructions">
     <h3>Instructions:</h3>
@@ -171,12 +225,64 @@
     
   </div>
 
-  <label for="style-format" class="select-label">Select style format:</label>
-  <select id="style-format" aria-label="Select style format">
-    <option value="css">CSS</option>
-    <option value="scss">SCSS</option>
-    <option value="sass">SASS</option>
-  </select>
+  <div class="interface">
+    <fieldset>
+      <legend>Output Options</legend>
+
+      <label for="style-format" class="select-label">Select style format:</label>
+      <select id="style-format" aria-label="Select style format">
+        <option value="css">CSS</option>
+        <option value="scss">SCSS</option>
+        <option value="sass">SASS</option>
+      </select>
+  
+
+    <div class="output-options">
+      <p>font-size:</p>
+      <div>
+        <input type="radio" id="fontSizePX" name="fontSize" value="px" checked/>
+        <label for="fontSizePX">px</label>
+
+        <input type="radio" id="fontSizeEM" name="fontSize" value="em" />
+        <label for="fontSizeEM">em</label>
+
+        <input type="radio" id="fontSizeREM" name="fontSize" value="rem" />
+        <label for="fontSizeREM">rem</label>
+      </div>
+    </div>
+<!-- 
+    <div class="output-options">
+      <p>line-height:</p>
+      <div>
+        <input type="radio" id="lineHeightPX" name="lineHeight" value="px" checked/>
+        <label for="lineHeightPX">px</label>
+  
+        <input type="radio" id="lineHeightPERCENT" name="lineHeight" value="%" />
+        <label for="lineHeightPERCENT">%</label>
+  
+        <input type="radio" id="lineHeightNONE" name="lineHeight" value="none" />
+        <label for="lineHeightNONE">none</label>
+      </div>
+      
+    </div>
+
+    <div class="output-options">
+      <p>letter-spacing:</p>
+
+      <input type="radio" id="letterSpacingPX" name="letterSpacing" value="px" checked/>
+      <label for="letterSpacingPX">px</label>
+
+      <input type="radio" id="letterSpacingPERCENT" name="letterSpacing" value="%" />
+      <label for="letterSpacingPERCENT">%</label>
+
+      <input type="radio" id="letterSpacingNONE" name="letterSpacing" value="none" />
+      <label for="letterSpacingNONE">none</label>
+
+    </div>   -->
+  </fieldset>
+
+  </div>
+  
 
   <div id="styles-container" tabindex="0"></div>
 
@@ -189,39 +295,53 @@
 
 <script>
   function copyToClipboard(elementId) {
-    const text = document.getElementById(elementId).innerText
+    const text = document.getElementById(elementId).innerText;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text).then(function() {
-        parent.postMessage({ pluginMessage: { type: 'copied' } }, '*')
+        parent.postMessage({ pluginMessage: { type: 'copied' } }, '*');
       }, function(err) {
-        console.error('Could not copy text: ', err)
-      })
+        console.error('Could not copy text: ', err);
+      });
     } else {
-      let textarea = document.createElement("textarea")
-      textarea.value = text
-      document.body.appendChild(textarea)
-      textarea.select()
-      document.execCommand('copy')
-      parent.postMessage({ pluginMessage: { type: 'copied' } }, '*')
-      document.body.removeChild(textarea)
+      let textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      parent.postMessage({ pluginMessage: { type: 'copied' } }, '*');
+      document.body.removeChild(textarea);
     }
   }
 
   document.getElementById('extract-styles-btn').addEventListener('click', () => {
-    const styleFormat = document.getElementById('style-format').value
-    parent.postMessage({ pluginMessage: { type: 'extract-styles', format: styleFormat } }, '*')
-  })
+    const styleFormat = document.getElementById('style-format').value;
+    const fontSizeUnit = document.querySelector('input[name="fontSize"]:checked').value;
+    // const lineHeightUnit = document.querySelector('input[name="lineHeight"]:checked').value;
+    // const letterSpacingUnit = document.querySelector('input[name="letterSpacing"]:checked').value;
+
+    parent.postMessage({
+      pluginMessage: {
+        type: 'extract-styles',
+        format: styleFormat,
+        unitPreferences: {
+          fontSizeUnit
+          // lineHeightUnit,
+          // letterSpacingUnit
+        }
+      }
+    }, '*');
+  });
 
   window.onmessage = (event) => {
-    const { type, styles, message } = event.data.pluginMessage
+    const { type, styles, message } = event.data.pluginMessage;
     if (type === 'styles') {
-      const container = document.getElementById('styles-container')
-      container.innerHTML = `<pre id="styles-text">${styles.join('\n\n')}</pre>`
-      document.getElementById('copy-styles-btn').disabled = false
+      const container = document.getElementById('styles-container');
+      container.innerHTML = `<pre id="styles-text">${styles.join('\n\n')}</pre>`;
+      document.getElementById('copy-styles-btn').disabled = false;
     } else if (type === 'error') {
-      console.error('Error:', message)
+      console.error('Error:', message);
     }
-  }
+  };
 
-  document.getElementById('copy-styles-btn').addEventListener('click', () => copyToClipboard('styles-text'))
+  document.getElementById('copy-styles-btn').addEventListener('click', () => copyToClipboard('styles-text'));
 </script>

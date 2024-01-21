@@ -1,104 +1,164 @@
-type CustomTextStyle = {
-  name: string
-  fontFamily: string
-  fontSize: number
-  fontWeight: string
-  lineHeight: number
-  letterSpacing: number
-  textDecoration: string | null
-  textTransform: string | null
-}
+type MyTextStyle = {
+  name: string;
+  fontFamily: string;
+  fontSize: number;
+  fontWeight: string;
+  lineHeight: number;
+  letterSpacing: number;
+  textDecoration: string | null;
+  textTransform: string | null;
+};
 
-const formatMixinName = (name: string): string => 
-  name.replace(/\s+/g, '-').replace(/\//g, '-').toLowerCase()
+type UnitPreferences = {
+  fontSizeUnit: string;
+  lineHeightUnit: string;
+  letterSpacingUnit: string;
+  baseSize: number; // Base size for em/rem calculations
+};
 
-  const createMixinContent = (textStyle: CustomTextStyle, addSemiColon: boolean = true): string => {
-    let mixinContent = `font-family: '${textStyle.fontFamily}'${addSemiColon ? ';' : ''}\n  font-size: ${textStyle.fontSize}px${addSemiColon ? ';' : ''}`
-  
-    if (textStyle.fontWeight.toLowerCase() !== 'regular') {
-      mixinContent += `\n  font-weight: ${textStyle.fontWeight.toLowerCase()}${addSemiColon ? ';' : ''}`
-    }
-  
-    if (textStyle.lineHeight !== undefined && textStyle.lineHeight !== 0) {
-      mixinContent += `\n  line-height: ${textStyle.lineHeight.toFixed(1)}${addSemiColon ? ';' : ''}`
-    }
-  
-    if (textStyle.letterSpacing !== undefined && textStyle.letterSpacing !== 0) {
-      mixinContent += `\n  letter-spacing: ${textStyle.letterSpacing}px${addSemiColon ? ';' : ''}`
-    }
-  
-    if (textStyle.textDecoration && textStyle.textDecoration.toLowerCase() !== 'none') {
-      mixinContent += `\n  text-decoration: ${textStyle.textDecoration.toLowerCase()}${addSemiColon ? ';' : ''}`
-    }
-  
-    if (textStyle.textTransform) {
-      mixinContent += `\n  text-transform: ${textStyle.textTransform}${addSemiColon ? ';' : ''}`
-    }
-  
-    return mixinContent
-  }
-  
-  const createStyleMixin = (textStyle: CustomTextStyle, format: string): string => {
-    const mixinName = formatMixinName(textStyle.name)
-    const addSemiColon = format !== 'sass'
-    const mixinContent = createMixinContent(textStyle, addSemiColon)
-    switch (format) {
-      case 'scss':
-        return `@mixin ${mixinName} {\n  ${mixinContent}\n}`
-      case 'sass':
-        return `=${mixinName}\n  ${mixinContent.replace(/; /g, '\n  ').replace(/;/g, '')}`
-      case 'css':
-        return `.${mixinName} {\n  ${mixinContent}\n}`
+const formatMixinName = (name: string): string =>
+  name.replace(/\s+/g, '-').replace(/\//g, '-').toLowerCase();
+
+const createMixinContent = (
+  textStyle: MyTextStyle,
+  unitPrefs: UnitPreferences,
+  addSemiColon: boolean = true
+): string => {
+  // Convert px to the desired unit
+  const convertToUnit = (value: number, unit: string): string => {
+    switch (unit) {
+      case 'em':
+      case 'rem':
+        return (value / unitPrefs.baseSize).toFixed(2) + unit; // Convert to em/rem and add unit
       default:
-        return `.${mixinName} {\n  ${mixinContent}\n}`
+        return value.toString() + unit; // Append unit (px or any other unit)
     }
+  };
+
+  let mixinContent = `font-family: '${textStyle.fontFamily}'${
+    addSemiColon ? ';' : ''
+  }\n  font-size: ${convertToUnit(
+    textStyle.fontSize,
+    unitPrefs.fontSizeUnit
+  )};`;
+
+  // Add more properties to mixinContent as needed
+  mixinContent += `\n  font-weight: ${textStyle.fontWeight};`;
+  mixinContent += `\n  line-height: ${convertToUnit(
+    textStyle.lineHeight,
+    unitPrefs.lineHeightUnit
+  )};`;
+  mixinContent += `\n  letter-spacing: ${convertToUnit(
+    textStyle.letterSpacing,
+    unitPrefs.letterSpacingUnit
+  )};`;
+
+  if (textStyle.textDecoration !== null) {
+    mixinContent += `\n  text-decoration: ${textStyle.textDecoration};`;
   }
 
-const extractTextStyles = (format: string) => {
-  const selectedFrame = figma.currentPage.selection[0]
-  if (!selectedFrame || selectedFrame.type !== 'FRAME') {
-    figma.notify('No frame is selected. Please select a frame to extract text styles.')
-    return
+  if (textStyle.textTransform !== null) {
+    mixinContent += `\n  text-transform: ${textStyle.textTransform};`;
   }
-  
-  const textStyles = new Set<CustomTextStyle>()
 
-  const collectTextStyles = (node: SceneNode) => {
-    if (node.type === 'TEXT' && node.textStyleId && typeof node.textStyleId === 'string') {
-      const figmaStyle = figma.getStyleById(node.textStyleId)
-      if (!figmaStyle) return
+  return mixinContent;
+};
 
-      const textStyle: CustomTextStyle = {
-        name: figmaStyle.name,
-        fontFamily: 'fontName' in node && typeof node.fontName !== 'symbol' ? node.fontName.family : '',
-        fontSize: typeof node.fontSize === 'number' ? node.fontSize : 0,
-        fontWeight: 'fontName' in node && typeof node.fontName !== 'symbol' ? node.fontName.style : '',
-        lineHeight: 'lineHeight' in node && typeof node.lineHeight !== 'symbol' && node.lineHeight.unit === 'PIXELS' ? node.lineHeight.value : 0,
-        letterSpacing: 'letterSpacing' in node && typeof node.letterSpacing !== 'symbol' ? node.letterSpacing.value : 0,
-        textDecoration: node.textDecoration && node.textDecoration !== 'NONE' && typeof node.textDecoration === 'string'
-          ? node.textDecoration.toLowerCase()
-          : null,
-        textTransform: node.textCase === 'UPPER' ? 'uppercase' : 
-                       node.textCase === 'LOWER' ? 'lowercase' : 
-                       node.textCase === 'TITLE' ? 'capitalize' : null,
+const createStyleMixin = (
+  textStyle: MyTextStyle,
+  format: string,
+  unitPrefs: UnitPreferences
+): string => {
+  const mixinName = formatMixinName(textStyle.name);
+  const addSemiColon = format !== 'sass';
+  const mixinContent = createMixinContent(textStyle, unitPrefs, addSemiColon);
+  switch (format) {
+    case 'scss':
+      return `@mixin ${mixinName} {\n  ${mixinContent}\n}`;
+    case 'sass':
+      return `=${mixinName}\n  ${mixinContent}`;
+    case 'css':
+      return `.${mixinName} {\n  ${mixinContent}\n}`;
+    default:
+      return `.${mixinName} {\n  ${mixinContent}\n}`;
+  }
+};
+
+const extractTextStyles = (format: string, unitPrefs: UnitPreferences) => {
+  const textStylesMap = new Map<string, MyTextStyle>();
+
+  const collectTextStyles = (node: BaseNode) => {
+    if (node.type === 'TEXT' && node.textStyleId) {
+      const textStyleId = node.textStyleId as string;
+      const textStyle = figma.getStyleById(textStyleId) as TextStyle;
+      if (textStyle && textStyle.name) {
+        let lineHeight = 0;
+        if (typeof node.lineHeight === 'number') {
+          lineHeight = node.lineHeight;
+        } else if (
+          typeof node.lineHeight === 'object' &&
+          'unit' in node.lineHeight
+        ) {
+          if (node.lineHeight.unit === 'PIXELS') {
+            lineHeight = (node.lineHeight as { value: number }).value;
+          }
+        }
+        const textDecoration =
+          (node.textDecoration === 'NONE' ? null : node.textDecoration) as
+          | string
+          | null;
+
+        const textStyleObj: MyTextStyle = {
+          name: textStyle.name,
+          fontFamily: textStyle.fontName.family,
+          fontSize: textStyle.fontSize as number,
+          fontWeight: textStyle.fontName.style,
+          lineHeight: lineHeight,
+          letterSpacing: (node.letterSpacing as LetterSpacing).value || 0,
+          textDecoration: textDecoration,
+          textTransform:
+            node.textCase === 'UPPER'
+              ? 'uppercase'
+              : node.textCase === 'LOWER'
+              ? 'lowercase'
+              : node.textCase === 'TITLE'
+              ? 'capitalize'
+              : null,
+        };
+
+        const styleKey = formatMixinName(textStyleObj.name);
+        textStylesMap.set(styleKey, textStyleObj);
       }
-      textStyles.add(textStyle)
     }
     if ('children' in node) {
-      node.children.forEach(collectTextStyles)
+      (node.children as BaseNode[]).forEach(collectTextStyles);
     }
-  }
+  };
 
-  collectTextStyles(selectedFrame)
-  const formattedStyles = Array.from(textStyles).map(style => createStyleMixin(style, format))
-  figma.ui.postMessage({ type: 'styles', styles: formattedStyles })
-}
+  (figma.root.children as BaseNode[]).forEach(collectTextStyles);
+  const formattedStyles = Array.from(textStylesMap.values()).map((style) =>
+    createStyleMixin(style, format, unitPrefs)
+  );
+  figma.ui.postMessage({ type: 'styles', styles: formattedStyles });
+};
 
-figma.showUI(__html__, { width: 500, height: 600 })
-figma.ui.onmessage = msg => {
+figma.showUI(__html__, { width: 500, height: 600 });
+figma.ui.onmessage = (msg) => {
   if (msg.type === 'extract-styles' && msg.format) {
-    extractTextStyles(msg.format)
+    const {
+      fontSizeUnit,
+      lineHeightUnit,
+      letterSpacingUnit,
+      baseSize,
+    } = msg.unitPreferences;
+    const unitPrefs: UnitPreferences = {
+      fontSizeUnit: fontSizeUnit || 'px',
+      lineHeightUnit: lineHeightUnit || 'px',
+      letterSpacingUnit: letterSpacingUnit || 'px',
+      baseSize: baseSize || 16, // Default base size
+    };
+    extractTextStyles(msg.format, unitPrefs);
   } else if (msg.type === 'copied') {
-    figma.notify('CSS Styles Copied to clipboard.')
+    figma.notify('CSS Styles Copied to clipboard.');
   }
-}
+};
