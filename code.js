@@ -1,116 +1,154 @@
-"use strict";
-const formatMixinName = (name) => name.replace(/\s+/g, '-').replace(/\//g, '-').toLowerCase();
-const createMixinContent = (textStyle, unitPrefs, addSemiColon = true) => {
-    // Convert px to the desired unit with appropriate formatting
-    const convertToUnit = (value, unit, isLineHeight = false) => {
-        if (value === 0)
-            return '0'; // Return '0' for zero values
-        if (unit === 'em' || unit === 'rem') {
-            let formattedValue = (value / unitPrefs.baseSize).toFixed(2);
-            if (isLineHeight) {
-                formattedValue = Number(formattedValue).toFixed(1); // Limit to one decimal place
-            }
-            return formattedValue + unit;
-        }
-        else {
-            if (isLineHeight) {
-                return value.toFixed(1) + unit; // Limit to one decimal place
-            }
-            return value.toString() + unit;
-        }
+class FigmaTextStyleExtractor {
+  constructor() {
+    this.unitPrefs = {}
+
+    
+    figma.showUI(__html__, { width: 500, height: 550 })
+    this.setupMessageListener()
+  }
+
+  setupMessageListener() {
+    figma.ui.onmessage = (msg) => {
+      switch (msg.type) {
+        case "extract-styles":
+          this.handleStyleExtraction(msg);
+          break;
+        case "copied":
+          figma.notify("CSS Styles Copied to clipboard.");
+          break
+      }
     };
-    let mixinContent = `font-family: '${textStyle.fontFamily}'${addSemiColon ? ';' : ''}\n  font-size: ${convertToUnit(textStyle.fontSize, unitPrefs.fontSizeUnit)};`;
-    // Add font-weight property with lowercase value
-    mixinContent += `\n  font-weight: ${textStyle.fontWeight.toLowerCase()};`;
-    // Add line-height property with one decimal place
-    mixinContent += `\n  line-height: ${convertToUnit(textStyle.lineHeight, unitPrefs.lineHeightUnit, true)};`;
-    // Add letter-spacing; if zero, decide between '0px' or '0'
-    const letterSpacingValue = textStyle.letterSpacing === 0 ? '0' : convertToUnit(textStyle.letterSpacing, unitPrefs.letterSpacingUnit);
-    mixinContent += `\n  letter-spacing: ${letterSpacingValue};`;
-    // Add text-decoration property with lowercase value
-    if (textStyle.textDecoration !== null) {
-        mixinContent += `\n  text-decoration: ${textStyle.textDecoration.toLowerCase()};`;
-    }
-    // Add text-transform property if present
-    if (textStyle.textTransform !== null) {
-        mixinContent += `\n  text-transform: ${textStyle.textTransform};`;
-    }
-    return mixinContent;
-};
-const createStyleMixin = (textStyle, format, unitPrefs) => {
-    const mixinName = formatMixinName(textStyle.name);
-    const addSemiColon = format !== 'sass';
-    const mixinContent = createMixinContent(textStyle, unitPrefs, addSemiColon);
-    switch (format) {
-        case 'scss':
-            return `@mixin ${mixinName} {\n  ${mixinContent}\n}`;
-        case 'sass':
-            return `.${mixinName}\n  ${mixinContent}`;
-        case 'css':
-            return `.${mixinName} {\n  ${mixinContent}\n}`;
-        default:
-            return `.${mixinName} {\n  ${mixinContent}\n}`;
-    }
-};
-const extractTextStyles = (format, unitPrefs) => {
+  }
+
+  handleStyleExtraction(msg) {
+    const { fontSizeUnit, lineHeightUnit, letterSpacingUnit, baseSize } =
+      msg.unitPreferences;
+    this.unitPrefs = {
+      fontSizeUnit: fontSizeUnit || "px",
+      lineHeightUnit: lineHeightUnit || "px",
+      letterSpacingUnit: letterSpacingUnit || "px",
+      baseSize: baseSize || 16,
+    };
+    this.extractTextStyles(msg.format);
+  }
+
+  extractTextStyles(format) {
     const textStylesMap = new Map();
     const collectTextStyles = (node) => {
-        if (node.type === 'TEXT' && node.textStyleId) {
-            const textStyleId = node.textStyleId;
-            const textStyle = figma.getStyleById(textStyleId);
-            if (textStyle && textStyle.name) {
-                let lineHeight = 0;
-                if (typeof node.lineHeight === 'number') {
-                    lineHeight = node.lineHeight;
-                }
-                else if (typeof node.lineHeight === 'object' &&
-                    'unit' in node.lineHeight) {
-                    if (node.lineHeight.unit === 'PIXELS') {
-                        lineHeight = node.lineHeight.value;
-                    }
-                }
-                const textDecoration = (node.textDecoration === 'NONE' ? null : node.textDecoration);
-                const textStyleObj = {
-                    name: textStyle.name,
-                    fontFamily: textStyle.fontName.family,
-                    fontSize: textStyle.fontSize,
-                    fontWeight: textStyle.fontName.style,
-                    lineHeight: lineHeight,
-                    letterSpacing: node.letterSpacing.value || 0,
-                    textDecoration: textDecoration,
-                    textTransform: node.textCase === 'UPPER'
-                        ? 'uppercase'
-                        : node.textCase === 'LOWER'
-                            ? 'lowercase'
-                            : node.textCase === 'TITLE'
-                                ? 'capitalize'
-                                : null,
-                };
-                const styleKey = formatMixinName(textStyleObj.name);
-                textStylesMap.set(styleKey, textStyleObj);
-            }
+      if (node.type === "TEXT" && node.textStyleId) {
+        const textStyle = figma.getStyleById(node.textStyleId);
+        if (textStyle && textStyle.name) {
+          textStylesMap.set(
+            this.formatMixinName(textStyle.name),
+            this.createTextStyleObject(node, textStyle)
+          );
         }
-        if ('children' in node) {
-            node.children.forEach(collectTextStyles);
-        }
+      }
+      if ("children" in node) {
+        node.children.forEach(collectTextStyles);
+      }
     };
+
     figma.root.children.forEach(collectTextStyles);
-    const formattedStyles = Array.from(textStylesMap.values()).map((style) => createStyleMixin(style, format, unitPrefs));
-    figma.ui.postMessage({ type: 'styles', styles: formattedStyles });
-};
-figma.showUI(__html__, { width: 500, height: 800 });
-figma.ui.onmessage = (msg) => {
-    if (msg.type === 'extract-styles' && msg.format) {
-        const { fontSizeUnit, lineHeightUnit, letterSpacingUnit, baseSize, } = msg.unitPreferences;
-        const unitPrefs = {
-            fontSizeUnit: fontSizeUnit || 'px',
-            lineHeightUnit: lineHeightUnit || 'px',
-            letterSpacingUnit: letterSpacingUnit || 'px',
-            baseSize: baseSize || 16, // Default base size
-        };
-        extractTextStyles(msg.format, unitPrefs);
+    const formattedStyles = Array.from(textStylesMap.values()).map((style) =>
+      this.createStyleMixin(style, format)
+    );
+    figma.ui.postMessage({ type: "styles", styles: formattedStyles });
+  }
+
+  createTextStyleObject(node, textStyle) {
+    return {
+      name: textStyle.name,
+      fontFamily: textStyle.fontName.family,
+      fontSize: textStyle.fontSize,
+      fontWeight: textStyle.fontName.style,
+      lineHeight: this.extractLineHeight(node),
+      letterSpacing: node.letterSpacing.value || 0,
+      textDecoration: this.extractTextDecoration(node),
+      textTransform: this.extractTextTransform(node),
+    };
+  }
+
+  formatMixinName(name) {
+    return name.replace(/\s+/g, "-").replace(/\//g, "-").toLowerCase();
+  }
+
+  createStyleMixin(textStyle, format) {
+    const mixinName = this.formatMixinName(textStyle.name);
+    const hasSemicolon = format !== "sass";
+    const selectorProperty = this.createSelectorProperties(textStyle, hasSemicolon)
+    return this.formatMixin(mixinName, selectorProperty, format);
+  }
+
+  createSelectorProperties(textStyle, hasSemicolon) {
+    const semicolonLogic = hasSemicolon ? ";" : ""
+    let selectorProperty = `font-family: '${textStyle.fontFamily}'${semicolonLogic}`
+    selectorProperty += `\n  font-size: ${this.convertToUnit(textStyle.fontSize, this.unitPrefs.fontSizeUnit)}${semicolonLogic}`
+    selectorProperty += `\n  font-weight: ${textStyle.fontWeight.toLowerCase()}${semicolonLogic}`
+    selectorProperty += `\n  line-height: ${this.convertToUnit(textStyle.lineHeight, this.unitPrefs.lineHeightUnit, true)}${semicolonLogic}`
+    selectorProperty += `\n  letter-spacing: ${this.formatLetterSpacing(textStyle.letterSpacing)}${semicolonLogic}`
+    if (textStyle.textDecoration) {
+      selectorProperty += `\n  text-decoration: ${textStyle.textDecoration}${semicolonLogic}`
     }
-    else if (msg.type === 'copied') {
-        figma.notify('CSS Styles Copied to clipboard.');
+    if (textStyle.textTransform) {
+      selectorProperty += `\n  text-transform: ${textStyle.textTransform}${semicolonLogic}`
     }
-};
+    return selectorProperty
+  }
+
+  formatMixin(mixinName, selectorProperty, format) {
+    switch (format) {
+      case "scss":
+        return `@mixin ${mixinName} {\n  ${selectorProperty}\n}`;
+      case "sass":
+        return `.${mixinName}\n  ${selectorProperty}`;
+      case "css":
+      default:
+        return `.${mixinName} {\n  ${selectorProperty}\n}`;
+    }
+  }
+
+  convertToUnit(value, unit, isLineHeight = false) {
+    if (value === 0) return '0';
+
+    let formattedValue;
+    if (unit === 'em' || unit === 'rem') {
+        formattedValue = (value / this.unitPrefs.baseSize).toFixed(isLineHeight ? 1 : 2);
+    } else {
+        formattedValue = value.toFixed(isLineHeight ? 1 : 0);
+    }
+    return formattedValue + unit;
+}
+
+  extractLineHeight(node) {
+    if (typeof node.lineHeight === "number") return node.lineHeight
+    if (
+      typeof node.lineHeight === "object" &&
+      node.lineHeight.unit === "PIXELS"
+    ) {
+      return node.lineHeight.value
+    }
+    return 0
+  }
+
+  extractTextDecoration(node) {
+    return node.textDecoration === "NONE" ? null : node.textDecoration.toLowerCase()
+  }
+
+  extractTextTransform(node) {
+    const textTransformMap = {
+        'UPPER': 'uppercase',
+        'LOWER': 'lowercase',
+        'TITLE': 'capitalize'
+    }
+    return textTransformMap[node.textCase] || null
+  }
+
+
+  formatLetterSpacing(letterSpacing) {
+    return letterSpacing === 0 ? "0" : this.convertToUnit(letterSpacing, this.unitPrefs.letterSpacingUnit)
+  }
+
+}
+
+new FigmaTextStyleExtractor()
